@@ -35,16 +35,14 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
-            sudo apt-get install -y gcc python3 python3-pip ninja-build zlib1g-dev meson
+            sudo apt-get install -y gcc ninja-build zlib1g-dev meson
           elif [ "$RUNNER_OS" == "macOS" ]; then
             if [ "${{ matrix.os }}" == "macos-13" ]; then
               brew update
               brew install gcc ninja zlib meson
-              brew install python@3.12 || true
-              brew link --overwrite python@3.12 || true
             else
               brew update
-              brew install gcc python3 ninja zlib meson
+              brew install gcc ninja zlib meson
             fi
           fi
 
@@ -63,7 +61,7 @@ jobs:
           if [ "${{ matrix.arch }}" == "aarch64" ]; then
             docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
             docker run --rm -v $(pwd):/work -w /work arm64v8/ubuntu:latest /bin/bash -c "
-              apt-get update && apt-get install -y gcc python3 python3-pip ninja-build zlib1g-dev meson
+              apt-get update && apt-get install -y gcc ninja-build zlib1g-dev meson
               meson setup builddir
               meson compile -C builddir
             "
