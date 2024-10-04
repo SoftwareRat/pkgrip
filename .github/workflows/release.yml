@@ -64,8 +64,7 @@ jobs:
             Changelog:
               ${{ github.event.head_commit.message }}
 
-          files: |
-            pkgrip-Linux-X64
-            pkgrip-macOS-ARM64
+            files: |
+              pkgrip-*-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
