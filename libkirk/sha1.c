@@ -2,14 +2,14 @@
 
 /* SHA: NIST's Secure Hash Algorithm */
 
-/*	This version written November 2000 by David Ireland of 
+/*	This version written November 2000 by David Ireland of
 	DI Management Services Pty Limited <code@di-mgt.com.au>
 
-	Adapted from code in the Python Cryptography Toolkit, 
+	Adapted from code in the Python Cryptography Toolkit,
 	version 1.0.0 by A.M. Kuchling 1995.
 */
 
-/* AM Kuchling's posting:- 
+/* AM Kuchling's posting:-
    Based on SHA code originally posted to sci.crypt by Peter Gutmann
    in message <30ajo5$oe8@ccu2.auckland.ac.nz>.
    Modified to test for endianness on creation of SHA objects by AMK.
@@ -18,7 +18,7 @@
 */
 
 /* Here's the first paragraph of Peter Gutmann's posting:
-   
+
 The following is my SHA (FIPS 180) code updated to allow use of the "fixed"
 SHA, thanks to Jim Gillogly and an anonymous contributor for the information on
 what's changed in the new version.  The fix is a simple change which involves
@@ -37,6 +37,7 @@ effort (for example the reengineering of a great many Capstone chips).
 #include <string.h>
 
 static void SHAtoByte(BYTE *output, UINT4 *input, unsigned int len);
+typedef unsigned int UINT4; // Define UINT4 type if not already defined
 
 /* The SHS block size and message digest sizes, in bytes */
 
@@ -133,19 +134,19 @@ void SHAInit(SHA_CTX *shsInfo)
    sections, e.g. based on the four subrounds
 
    Note that this corrupts the shsInfo->data area */
+// static void SHSTransform(UINT4 *digest, UINT4 *data);
 
-static void SHSTransform( digest, data )
-     UINT4 *digest, *data ;
-    {
+static void SHSTransform(UINT4 *digest, UINT4 *data) {
     UINT4 A, B, C, D, E;     /* Local vars */
-    UINT4 eData[ 16 ];       /* Expanded data */
+    UINT4 eData[16];        /* Expanded data */
 
     /* Set up first buffer and local data buffer */
-    A = digest[ 0 ];
-    B = digest[ 1 ];
-    C = digest[ 2 ];
-    D = digest[ 3 ];
-    E = digest[ 4 ];
+    A = digest[0];
+    B = digest[1];
+    C = digest[2];
+    D = digest[3];
+    E = digest[4];
+    memcpy((POINTER)eData, (POINTER)data, SHS_DATASIZE);
     memcpy( (POINTER)eData, (POINTER)data, SHS_DATASIZE );
 
     /* Heavy mangling, in 4 sub-rounds of 20 interations each. */
@@ -360,7 +361,7 @@ static void SHAtoByte(BYTE *output, UINT4 *input, unsigned int len)
 {	/* Output SHA digest in byte array */
 	unsigned int i, j;
 
-	for(i = 0, j = 0; j < len; i++, j += 4) 
+	for(i = 0, j = 0; j < len; i++, j += 4)
 	{
         output[j+3] = (BYTE)( input[i]        & 0xff);
         output[j+2] = (BYTE)((input[i] >> 8 ) & 0xff);
