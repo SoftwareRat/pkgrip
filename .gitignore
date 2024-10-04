@@ -118,3 +118,6 @@ Temporary Items
 # Ignore all local history of files
 .history
 .ionide
+
+# No more pkgrip
+pkgrip
