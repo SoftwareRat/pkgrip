@@ -8,7 +8,7 @@ permissions:
   discussions: write
 
 jobs:
-  build-and-release:
+  build:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -38,3 +38,25 @@ jobs:
       - name: Rename binary
         run: |
           mv pkgrip pkgrip-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkgrip-${{ runner.os }}-${{ runner.arch }}
+          path: pkgrip-${{ runner.os }}-${{ runner.arch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            pkgrip-Linux-X64/pkgrip-Linux-X64
+            pkgrip-macOS-X64/pkgrip-macOS-X64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
