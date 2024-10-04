@@ -16,29 +16,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up GCC on Linux
-        if: runner.os == 'Linux'
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc
-
-      - name: Set up GCC on macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install gcc
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y gcc make zlib1g-dev
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew update
+            brew install gcc make zlib
+          fi
 
       - name: Build
-        run: make
+        run: |
+          make all
 
       - name: Rename binary
         run: |
           mv pkgrip pkgrip-${{ runner.os }}-${{ runner.arch }}
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: pkgrip-${{ runner.os }}-${{ runner.arch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
