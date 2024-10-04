@@ -28,7 +28,7 @@ pkg -> buffer -> decrypted pkg -> buffer -> extracted files
 
 To use pkgrip, run the following command in your terminal:
 
-pkgrip [options] <path_to_pkg>
+`pkgrip [options] <path_to_pkg>`
 
 ### Options
 
