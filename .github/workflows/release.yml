@@ -54,7 +54,7 @@ jobs:
       - name: Build
         run: |
           if [ "${{ matrix.arch }}" == "aarch64" ]; then
-            docker run --rm multiarch/qemu-user-static --reset -p yes
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
             docker run --rm -v $(pwd):/work -w /work arm64v8/ubuntu:latest /bin/bash -c "
               apt-get update && apt-get install -y gcc python3 python3-pip ninja-build zlib1g-dev meson
               meson setup builddir
@@ -67,7 +67,7 @@ jobs:
 
       - name: Rename binary
         run: |
-          mv builddir/pkgrip pkgrip-${{ runner.os }}-${{ matrix.arch }}
+          sudo mv builddir/pkgrip pkgrip-${{ runner.os }}-${{ matrix.arch }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
