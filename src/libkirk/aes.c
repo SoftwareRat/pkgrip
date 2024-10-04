@@ -872,8 +872,7 @@ int rijndaelKeySetupDec(u32 rk[/*4*(Nr + 1)*/], const u8 cipherKey[], int keyBit
 	return Nr;
 }
 
-void rijndaelEncrypt(const u32 rk[/*4*(Nr + 1)*/], int Nr, const u8 pt[16],
-    u8 ct[16])
+void rijndaelEncrypt(const unsigned int rk[], int Nr, const unsigned char pt[], unsigned char ct[])
 {
 	u32 s0, s1, s2, s3, t0, t1, t2, t3;
 #ifndef FULL_UNROLL

@@ -6,10 +6,13 @@
 #include <stdio.h>
 
 #include "kirk_engine.h"
+#define POINT_COORD_SIZE 20
+#define ECDSA_BUFFER_SIZE 32 
+#define BN_BUFFER_SIZE 21    // Define a constant for BN buffer size
 
 struct point {
-  u8 x[20];
-  u8 y[20];
+    u8 x[POINT_COORD_SIZE];
+    u8 y[POINT_COORD_SIZE];
 };
 
 u8 ec_p[20];
@@ -20,20 +23,19 @@ struct point ec_G;  // mon
 struct point ec_Q;  // mon
 u8 ec_k[21];
 
-void hex_dump(char *str, u8 *buf, int size)
-{
-	int i;
+void hex_dump(char *str, u8 *buf, int size) {
+    int i;
 
-	if(str)
-	printf("%s:", str);
+    if (str)
+        printf("%s:", str);
 
-	for(i=0; i<size; i++){
-	if((i%32)==0){
-	  printf("\n%4X:", i);
-	}
-	printf(" %02X", buf[i]);
-	}
-	printf("\n\n");
+    for (i = 0; i < size; i++) {
+        if ((i % 32) == 0) {
+            printf("\n%4X:", i);
+        }
+        printf(" %02X", buf[i]);
+    }
+    printf("\n\n");
 }
 
 static void elt_copy(u8 *d, u8 *a)
@@ -236,42 +238,43 @@ static void point_mul(struct point *d, u8 *a, struct point *b)
 
 static void generate_ecdsa(u8 *outR, u8 *outS, u8 *k, u8 *hash)
 {
-	u8 e[21];
-	u8 kk[21];
-	u8 m[21];
-	u8 R[21];
-	u8 S[21];
-	u8 minv[21];
-	struct point mG;
+    u8 e[BN_BUFFER_SIZE] = {0};
+    u8 kk[BN_BUFFER_SIZE] = {0};
+    u8 m[BN_BUFFER_SIZE] = {0};
+    u8 R[ECDSA_BUFFER_SIZE] = {0};
+    u8 S[ECDSA_BUFFER_SIZE] = {0};
+    u8 minv[BN_BUFFER_SIZE] = {0};
+    struct point mG;
 
-	e[0] = 0;R[0] = 0;S[0] = 0;
-	memcpy(e + 1, hash, 20);
-	bn_reduce(e, ec_N, 21);
+    memcpy(e + 1, hash, 20);
+    bn_reduce(e, ec_N, sizeof(e));
 
-	kirk_CMD14(m+1, 20);
-	m[0] = 0;
+    kirk_CMD14(m + 1, 20);
+    m[0] = 0;
 
-	point_mul(&mG, m, &ec_G);
-	point_from_mon(&mG);
-	R[0] = 0;
-	elt_copy(R+1, mG.x);
+    point_mul(&mG, m, &ec_G);
+    point_from_mon(&mG);
+    
+    elt_copy(R + 1, mG.x);
 
-	bn_copy(kk, k, 21);
-	bn_reduce(kk, ec_N, 21);
-	bn_to_mon(m, ec_N, 21);
-	bn_to_mon(e, ec_N, 21);
-	bn_to_mon(R, ec_N, 21);
-	bn_to_mon(kk, ec_N, 21);
+    bn_copy(kk, k, sizeof(kk));
+    bn_reduce(kk, ec_N, sizeof(kk));
+    
+    bn_to_mon(m, ec_N, sizeof(m));
+    bn_to_mon(e, ec_N, sizeof(e));
+    bn_to_mon(R, ec_N, sizeof(R));
+    bn_to_mon(kk, ec_N, sizeof(kk));
 
-	bn_mon_mul(S, R, kk, ec_N, 21);
-	bn_add(kk, S, e, ec_N, 21);
-	bn_mon_inv(minv, m, ec_N, 21);
-	bn_mon_mul(S, minv, kk, ec_N, 21);
+    bn_mon_mul(S, R, kk, ec_N, sizeof(S));
+    bn_add(kk, S, e, ec_N, sizeof(kk));
+    bn_mon_inv(minv, m, ec_N, sizeof(minv));
+    bn_mon_mul(S, minv, kk, ec_N, sizeof(S));
 
-	bn_from_mon(R, ec_N, 21);
-	bn_from_mon(S, ec_N, 21);
-	memcpy(outR,R+1,0x20);
-	memcpy(outS,S+1,0x20);
+    bn_from_mon(R, ec_N, sizeof(R));
+    bn_from_mon(S, ec_N, sizeof(S));
+
+    memcpy(outR,R,ECDSA_BUFFER_SIZE); // Copy R value to outR (no offset)
+    memcpy(outS,S,ECDSA_BUFFER_SIZE); // Copy S value to outS (no offset)
 }
 
 static int check_ecdsa(struct point *Q, u8 *inR, u8 *inS, u8 *hash)
@@ -295,23 +298,16 @@ static int check_ecdsa(struct point *Q, u8 *inR, u8 *inS, u8 *hash)
 	bn_to_mon(R, ec_N, 21);
 	bn_to_mon(S, ec_N, 21);
 	bn_to_mon(e, ec_N, 21);
-	// make Sinv = 1/S
 	bn_mon_inv(Sinv, S, ec_N, 21);
-	// w1 = m * Sinv
 	bn_mon_mul(w1, e, Sinv, ec_N, 21);
-	// w2 = r * Sinv
 	bn_mon_mul(w2, R, Sinv, ec_N, 21);
 
-	// mod N both
 	bn_from_mon(w1, ec_N, 21);
 	bn_from_mon(w2, ec_N, 21);
 
-	// r1 = m/s * G
 	point_mul(&r1, w1, &ec_G);
-	// r2 = r/s * P
 	point_mul(&r2, w2, Q);
 
-	//r1 = r1 + r2
 	point_add(&r1, &r1, &r2);
 
 	point_from_mon(&r1);
@@ -379,14 +375,12 @@ void ecdsa_set_priv(u8 *ink)
 	memcpy(ec_k, k, sizeof ec_k);
 }
 
-int ecdsa_verify(u8 *hash, u8 *R, u8 *S)
-{
-	return check_ecdsa(&ec_Q, R, S, hash);
+int ecdsa_verify(u8 *hash, u8 *R, u8 *S) {
+    return check_ecdsa(&ec_Q, R, S, hash);
 }
 
-void ecdsa_sign(u8 *hash, u8 *R, u8 *S)
-{
-	generate_ecdsa(R, S, ec_k, hash);
+void ecdsa_sign(u8 *hash, u8 *R, u8 *S) {
+    generate_ecdsa(R, S, ec_k, hash);
 }
 
 int point_is_on_curve(u8 *p)

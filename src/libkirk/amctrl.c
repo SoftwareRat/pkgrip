@@ -10,6 +10,7 @@
 #include "kirk_engine.h"
 #include "amctrl.h"
 #include "aes.h"
+#define STRBUF_SIZE 0x30
 
 // KIRK buffer.
 static u8 kirk_buf[0x0814];
@@ -680,146 +681,155 @@ int bbmac_forge(MAC_KEY *mkey, u8 *bbmac, u8 *vkey, u8 *buf)
 /*
 	sceNpDrm functions.
 */
+
 int sceNpDrmGetFixedKey(u8 *key, char *npstr, int type)
 {
-	AES_ctx akey;
-	MAC_KEY mkey;
-	char strbuf[0x30];
-	int retv;
+    AES_ctx akey;
+    MAC_KEY mkey;
+    char strbuf[STRBUF_SIZE];
+    int retv;
 
-	if ((type & 0x01000000) == 0)
-		return 0x80550901;
-	
-	type &= 0x000000ff;
+    if ((type & 0x01000000) == 0)
+        return 0x80550901;
+    
+    type &= 0x000000ff;
 
-	memset(strbuf, 0, 0x30);
-	strncpy(strbuf, npstr, 0x30);
+    memset(strbuf, 0, sizeof(strbuf)); // Clear the buffer
+    strncpy(strbuf, npstr, sizeof(strbuf) - 1); // Copy with space for null terminator
+    strbuf[sizeof(strbuf) - 1] = '\0'; // Ensure null termination
 
-	retv = sceDrmBBMacInit(&mkey, 1);
-	
-	if (retv)
-		return retv;
+    retv = sceDrmBBMacInit(&mkey, 1);
+    
+    if (retv)
+        return retv;
 
-	retv = sceDrmBBMacUpdate(&mkey, (u8*)strbuf, 0x30);
-	
-	if (retv)
-		return retv;
+    retv = sceDrmBBMacUpdate(&mkey, (u8*)strbuf, sizeof(strbuf)); // Use STRBUF_SIZE instead of magic number
+    
+    if (retv)
+        return retv;
 
-	retv = sceDrmBBMacFinal(&mkey, key, npdrm_fixed_key);
-	
-	if (retv)
-		return 0x80550902;
+    retv = sceDrmBBMacFinal(&mkey, key, npdrm_fixed_key);
+    
+    if (retv)
+        return 0x80550902;
 
-	if (type == 0)
-		return 0;
-	if (type > 3)
-		return 0x80550901;
-	
-	type = (type - 1) * 16;
+    if (type == 0)
+        return 0;
+    if (type > 3)
+        return 0x80550901;
+    
+    type = (type - 1) * 16;
 
-	AES_set_key(&akey, &npdrm_enc_keys[type], 128);
-	AES_encrypt(&akey, key, key);
+    AES_set_key(&akey, &npdrm_enc_keys[type], 128);
+    AES_encrypt(&akey, key, key);
 
-	return 0;
+    return 0;
 }
+
+#define DNAS_HASH_SIZE 0x80
+#define KEY_HASH_SIZE 0x70
+#define TABLE_HASH_SIZE 0x60
+#define PGD_HEADER_SIZE 0x30
 
 int decrypt_pgd(u8* pgd_data, int pgd_size, int flag, u8* key __attribute__((unused)))
 {
-	int result;
-	PGD_HEADER PGD[sizeof(PGD_HEADER)];
-	MAC_KEY mkey;
-	CIPHER_KEY ckey;
-	u8* fkey;
+    int result;
+    PGD_HEADER PGD; // Declare a single instance of PGD_HEADER
+    MAC_KEY mkey;
+    CIPHER_KEY ckey;
+    u8* fkey;
 
-	// Read in the PGD header parameters.
-	memset(PGD, 0, sizeof(PGD_HEADER));
+    // Read in the PGD header parameters.
+    memset(&PGD, 0, sizeof(PGD)); // Use &PGD to clear the structure
 
-	PGD->buf = pgd_data;
-	PGD->key_index = *(u32*)(pgd_data + 4);
-	PGD->drm_type  = *(u32*)(pgd_data + 8);
+    PGD.buf = pgd_data;
+    PGD.key_index = *(u32*)(pgd_data + 4);
+    PGD.drm_type  = *(u32*)(pgd_data + 8);
 
-	// Set the hashing, crypto and open modes.
-	if (PGD->drm_type == 1) {
-		PGD->mac_type = 1;
-		flag |= 4;
+    // Set the hashing, crypto and open modes.
+    if (PGD.drm_type == 1) {
+        PGD.mac_type = 1;
+        flag |= 4;
 
-		if(PGD->key_index > 1) {
-			PGD->mac_type = 3;
-			flag |= 8;
-		}
+        if (PGD.key_index > 1) {
+            PGD.mac_type = 3;
+            flag |= 8;
+        }
 
-		PGD->cipher_type = 1;
-	} else {
-		PGD->mac_type = 2;
-		PGD->cipher_type = 2;
-	}
+        PGD.cipher_type = 1;
+    } else {
+        PGD.mac_type = 2;
+        PGD.cipher_type = 2;
+    }
 
-	PGD->open_flag = flag;
+    PGD.open_flag = flag;
 
-	// Get the fixed DNAS key.
-	fkey = NULL;
-	if ((flag & 0x2) == 0x2)
-		fkey = dnas_key1A90;
-	if ((flag & 0x1) == 0x1)
-		fkey = dnas_key1AA0;
+    // Get the fixed DNAS key.
+    fkey = NULL;
+    if ((flag & 0x2) == 0x2)
+        fkey = dnas_key1A90; // Ensure dnas_key1A90 is defined elsewhere
+    if ((flag & 0x1) == 0x1)
+        fkey = dnas_key1AA0; // Ensure dnas_key1AA0 is defined elsewhere
 
-	if (fkey == NULL) {
-		printf("PGD: Invalid PGD DNAS flag! %08x\n", flag);
-		return -1;
-	}
+    if (fkey == NULL) {
+        printf("PGD: Invalid PGD DNAS flag! %08x\n", flag);
+        return -1;
+    }
 
-	// Test MAC hash at 0x80 (DNAS hash).
-	sceDrmBBMacInit(&mkey, PGD->mac_type);
-	sceDrmBBMacUpdate(&mkey, pgd_data, 0x80);
-	result = sceDrmBBMacFinal2(&mkey, pgd_data + 0x80, fkey);
+    // Test MAC hash at DNAS_HASH_SIZE (DNAS hash).
+    sceDrmBBMacInit(&mkey, PGD.mac_type);
+    sceDrmBBMacUpdate(&mkey, pgd_data, DNAS_HASH_SIZE);
+    result = sceDrmBBMacFinal2(&mkey, pgd_data + DNAS_HASH_SIZE, fkey);
 
-	if (result) {
-		printf("PGD: Invalid PGD 0x80 MAC hash!\n");
-		return -1;
-	}
+    if (result) {
+        printf("PGD: Invalid PGD %08x MAC hash!\n", DNAS_HASH_SIZE);
+        return -1;
+    }
 
-	// Test MAC hash at 0x70 (key hash).
-	sceDrmBBMacInit(&mkey, PGD->mac_type);
-	sceDrmBBMacUpdate(&mkey, pgd_data, 0x70);
+    // Test MAC hash at KEY_HASH_SIZE (key hash).
+    sceDrmBBMacInit(&mkey, PGD.mac_type);
+    sceDrmBBMacUpdate(&mkey, pgd_data, KEY_HASH_SIZE);
 
-	// Generate the key from MAC 0x70.
-	bbmac_getkey(&mkey, pgd_data + 0x70, PGD->vkey);
+    // Generate the key from MAC at KEY_HASH_SIZE.
+    bbmac_getkey(&mkey, pgd_data + KEY_HASH_SIZE, PGD.vkey);
 
-	// Decrypt the PGD header block (0x30 bytes).
-	sceDrmBBCipherInit(&ckey, PGD->cipher_type, 2, pgd_data + 0x10, PGD->vkey, 0);
-	sceDrmBBCipherUpdate(&ckey, pgd_data + 0x30, 0x30);
-	sceDrmBBCipherFinal(&ckey);
+    // Decrypt the PGD header block (PGD_HEADER_SIZE bytes).
+    sceDrmBBCipherInit(&ckey, PGD.cipher_type, 2, pgd_data + 0x10, PGD.vkey, 0);
+    sceDrmBBCipherUpdate(&ckey, pgd_data + 0x30, PGD_HEADER_SIZE);
+    sceDrmBBCipherFinal(&ckey);
 
-	// Get the decryption parameters from the decrypted header.
-	PGD->data_size   = *(u32*)(pgd_data + 0x44);
-	PGD->block_size  = *(u32*)(pgd_data + 0x48);
-	PGD->data_offset = *(u32*)(pgd_data + 0x4c);
+    // Get the decryption parameters from the decrypted header.
+    PGD.data_size   = *(u32*)(pgd_data + 0x44);
+    PGD.block_size  = *(u32*)(pgd_data + 0x48);
+    PGD.data_offset = *(u32*)(pgd_data + 0x4c);
 
-	// Additional size variables.
-	PGD->align_size = (PGD->data_size + 15) &~ 15;
-	PGD->table_offset = PGD->data_offset + PGD->align_size;
-	PGD->block_nr = (PGD->align_size + PGD->block_size - 1) &~ (PGD->block_size - 1);
-	PGD->block_nr = PGD->block_nr / PGD->block_size;
+    // Additional size variables.
+    PGD.align_size = (PGD.data_size + 15) & ~15; // Align to block size
+    PGD.table_offset = PGD.data_offset + PGD.align_size;
+    
+    // Calculate number of blocks.
+    PGD.block_nr = (PGD.align_size + PGD.block_size - 1) / PGD.block_size;
 
-	if ((PGD->align_size + PGD->block_nr * 16) > pgd_size) {
-		printf("ERROR: Invalid PGD data size!\n");
-		return -1;
-	}
+    if ((PGD.align_size + (PGD.block_nr * 16)) > pgd_size) {
+        printf("ERROR: Invalid PGD data size!\n");
+        return -1;
+    }
 
-	// Test MAC hash at 0x60 (table hash).
-	sceDrmBBMacInit(&mkey, PGD->mac_type);
-	sceDrmBBMacUpdate(&mkey, pgd_data + PGD->table_offset, PGD->block_nr * 16);
-	result = sceDrmBBMacFinal2(&mkey, pgd_data + 0x60, PGD->vkey);
+    // Test MAC hash at TABLE_HASH_SIZE (table hash).
+    sceDrmBBMacInit(&mkey, PGD.mac_type);
+    sceDrmBBMacUpdate(&mkey, pgd_data + PGD.table_offset, (PGD.block_nr * 16));
+    
+    result = sceDrmBBMacFinal2(&mkey, pgd_data + TABLE_HASH_SIZE, PGD.vkey);
 
-	if (result) {
-		printf("ERROR: Invalid PGD 0x60 MAC hash!\n");
-		return -1;
-	}
+    if (result) {
+        printf("ERROR: Invalid PGD %08x MAC hash!\n", TABLE_HASH_SIZE);
+        return -1;
+    }
 
-	// Decrypt the data.
-	sceDrmBBCipherInit(&ckey, PGD->cipher_type, 2, pgd_data + 0x30, PGD->vkey, 0);
-	sceDrmBBCipherUpdate(&ckey, pgd_data + 0x90, PGD->align_size);
-	sceDrmBBCipherFinal(&ckey);
+     // Decrypt the data.
+     sceDrmBBCipherInit(&ckey, PGD.cipher_type, 2, pgd_data + 0x30, PGD.vkey, 0);
+     sceDrmBBCipherUpdate(&ckey, pgd_data + 0x90, PGD.align_size);
+     sceDrmBBCipherFinal(&ckey);
 
-	return PGD->data_size;
+     return PGD.data_size; 
 }
