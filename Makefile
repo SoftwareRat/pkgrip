@@ -15,11 +15,11 @@ PKGRIP_OBJS = $(PKGRIP_SRCS:.c=.o)
 all: $(TARGET1) $(TARGET2)
 
 $(TARGET1): $(LIB_OBJS)
-	@mkdir -p libkirk  # Ensure the directory exists
+	@mkdir -p libkirk
 	$(AR) rcs $@ $^
 
-$(TARGET2): $(PKGRIP_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ -L./libkirk -lkirk -lz
+$(TARGET2): $(PKGRIP_OBJS) $(TARGET1)
+	$(CC) $(CFLAGS) -o $@ $(PKGRIP_OBJS) -L./libkirk -lkirk -lz
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -28,11 +28,10 @@ clean:
 	rm -rf *.o libkirk/*.o $(TARGET1) $(TARGET2)
 
 # Automatically generate dependencies (for header files)
--include $(LIB_OBJS:.o=.d) $(PKGRIP_OBJS:.o=.d)
-
 %.d: %.c
 	@set -e; rm -f $@; \
-	$(CC) -M $(CFLAGS) $< > $@; \
-	sed -i.bak 's|^|$(dir $<)|' $@ && rm -f $@.bak
+	$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
 
-
+-include $(LIB_SRCS:.c=.d) $(PKGRIP_SRCS:.c=.d)
