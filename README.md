@@ -41,15 +41,15 @@ pkgrip [options] <path_to_pkg>
 
 1. Extract all files from a PKG:
 
-   pkgrip /path/to/game.pkg
+   `pkgrip /path/to/game.pkg`
 
 2. Extract only PSP files:
 
-   pkgrip -psp /path/to/psp_game.pkg
+   `pkgrip -psp /path/to/psp_game.pkg`
 
 3. Extract only PS3 files:
 
-   pkgrip -ps3 /path/to/ps3_game.pkg
+   `pkgrip -ps3 /path/to/ps3_game.pkg`
 
 Note: If no options are provided, pkgrip will extract both PSP and PS3 files by default.
 
