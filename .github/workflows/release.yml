@@ -37,8 +37,15 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y gcc python3 python3-pip ninja-build zlib1g-dev meson
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            brew update
-            brew install gcc python3 ninja zlib meson
+            if [ "${{ matrix.os }}" == "macos-13" ]; then
+              brew update
+              brew install gcc ninja zlib meson
+              brew install python@3.12
+              brew link --overwrite python@3.12
+            else
+              brew update
+              brew install gcc python3 ninja zlib meson
+            fi
           fi
 
       - name: Set SDKROOT on macOS
