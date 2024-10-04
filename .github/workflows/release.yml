@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.github/**'
+      - 'LICENSE'
+      - '.vscode/**'
 
 permissions:
   contents: write
@@ -89,6 +95,18 @@ jobs:
         with:
           path: pkgrip-build
 
+      - name: Calculate SHA256 hashes
+        id: sha256
+        run: |
+          SHA256_X86=$(sha256sum ./pkgrip-build/pkgrip-Linux-x86_64/pkgrip-Linux-x86_64 | awk '{print $1}')
+          SHA256_AARCH64=$(sha256sum ./pkgrip-build/pkgrip-Linux-aarch64/pkgrip-Linux-aarch64 | awk '{print $1}')
+          SHA256_MACOS_X64=$(sha256sum ./pkgrip-build/pkgrip-macOS-x86_64/pkgrip-macOS-x86_64 | awk '{print $1}')
+          SHA256_MACOS_ARM64=$(sha256sum ./pkgrip-build/pkgrip-macOS-arm64/pkgrip-macOS-arm64 | awk '{print $1}')
+          echo "sha256_x86=$SHA256_X86" >> $GITHUB_OUTPUT
+          echo "sha256_aarch64=$SHA256_AARCH64" >> $GITHUB_OUTPUT
+          echo "sha256_macos_x64=$SHA256_MACOS_X64" >> $GITHUB_OUTPUT
+          echo "sha256_macos_arm64=$SHA256_MACOS_ARM64" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -97,6 +115,13 @@ jobs:
           body: |
             Changelog:
               ${{ github.event.head_commit.message }}
+
+            SHA256 Checksums:
+              - Linux x86_64: $SHA256_X86
+              - Linux aarch64: $SHA256_AARCH64
+              - macOS x86_64: $SHA256_MACOS_X64
+              - macOS arm64: $SHA256_MACOS_ARM64
+
           files: |
             ./pkgrip-build/pkgrip-Linux-x86_64/pkgrip-Linux-x86_64
             ./pkgrip-build/pkgrip-Linux-aarch64/pkgrip-Linux-aarch64

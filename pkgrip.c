@@ -7,7 +7,7 @@
 #include "libkirk/amctrl.h"
 #include "libkirk/kirk_engine.h"
 
-#define PKGRIP_VERSION "1.1"
+#define PKGRIP_VERSION "1.2"
 
 /* NOTE: only supports files under 4GB */
 
@@ -33,18 +33,27 @@ u8 PS3AESKey[16] = {
 
 void usage(const char *fmt, ...)
 {
-	va_list list;
+	va_list args;
 	char msg[256];
 
-	va_start(list, fmt);
-	vsprintf(msg, fmt, list);
-	va_end(list);
+	va_start(args, fmt);
+	vsnprintf(msg, sizeof(msg), fmt, args);
+	va_end(args);
 
-	printf("%s", msg);
+	printf("\n╔══════════════════════════════════════════════════════════════╗\n");
+	printf("║ %-60s ║\n", msg);
+	printf("╠══════════════════════════════════════════════════════════════╣\n");
+	printf("║                           Usage                              ║\n");
+	printf("║ %-60s ║\n", exec);
+	printf("║                                                              ║\n");
+	printf("║                          Options                             ║\n");
+	printf("║  -psp    Extract PSP files only                              ║\n");
+	printf("║  -ps3    Extract PS3 files only                              ║\n");
+	printf("║                                                              ║\n");
+	printf("║  Both options are enabled by default.                        ║\n");
+	printf("╚══════════════════════════════════════════════════════════════╝\n\n");
 
-	printf("\nUsage:\n\t%s [options] pathtopkg\n\n", exec);
-	printf("Options: (optional)\n\t-psp - extract PSP files only\n\t-ps3 - extract PS3 files only\n\tBoth enabled by default.\n\n");
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 void dumpPS1key(const char *path)
@@ -437,7 +446,10 @@ void free_mallocs()
 
 int main(int argc, char **argv)
 {
-	printf("=================\n== pkgrip v%s == <by qwikrazor87>\n=================\n\n", PKGRIP_VERSION);
+	printf("===========================\n");
+	printf("==     pkgrip v%s     ==\n", PKGRIP_VERSION);
+	printf("== by qwikrazor87 & SoftwareRat ==\n");
+	printf("===========================\n\n");
 	exec = argv[0];
 
 	if (argc < 2)
