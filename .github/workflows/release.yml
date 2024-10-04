@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -53,10 +55,17 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+
+            Changelog:
+              ${{ github.event.head_commit.message }}
+
           files: |
-            pkgrip-Linux-X64/pkgrip-Linux-X64
-            pkgrip-macOS-X64/pkgrip-macOS-X64
+            pkgrip-Linux-X64
+            pkgrip-macOS-ARM64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
