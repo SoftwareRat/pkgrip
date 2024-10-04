@@ -53,6 +53,8 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: pkgrip-build
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -65,7 +67,7 @@ jobs:
               ${{ github.event.head_commit.message }}
 
           files: |
-            ./pkgrip-Linux-X64
-            ./pkgrip-macOS-ARM64
+            ./pkgrip-build/pkgrip-Linux-X64/pkgrip-Linux-X64
+            ./pkgrip-build/pkgrip-macOS-ARM64/pkgrip-macOS-ARM64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
