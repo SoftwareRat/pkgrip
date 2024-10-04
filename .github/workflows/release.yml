@@ -43,12 +43,7 @@ jobs:
             sudo apt-get install -y gcc ninja-build zlib1g-dev meson
           elif [ "$RUNNER_OS" == "macOS" ]; then
             brew update
-            brew bundle --file=- <<EOF
-            brew "gcc"
-            brew "ninja"
-            brew "zlib"
-            brew "meson"
-            EOF
+            brew install ninja zlib meson
           fi
 
       - name: Set SDKROOT on macOS
