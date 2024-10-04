@@ -52,25 +52,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-### C++ ###
-# Prerequisites
-
-# Compiled Object files
-*.slo
-
-# Precompiled Headers
-
-# Compiled Dynamic libraries
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-
-# Executables
-
 ### Linux ###
 *~
 
@@ -119,28 +100,21 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
-### Windows ###
-# Windows thumbnail cache files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
 
-# Dump file
-*.stackdump
+# Local History for Visual Studio Code
+.history/
 
-# Folder config file
-[Dd]esktop.ini
+# Built Visual Studio Code Extensions
+*.vsix
 
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
