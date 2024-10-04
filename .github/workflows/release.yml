@@ -26,9 +26,12 @@ jobs:
             brew install gcc make zlib
           fi
 
+      - name: Set SDKROOT on macOS
+        if: runner.os == 'macOS'
+        run: echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+
       - name: Build
-        run: |
-          make all
+        run: make all
 
       - name: Rename binary
         run: |

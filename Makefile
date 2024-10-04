@@ -33,4 +33,6 @@ clean:
 %.d: %.c
 	@set -e; rm -f $@; \
 	$(CC) -M $(CFLAGS) $< > $@; \
-	sed -i '' 's|^|$(dir $<)|' $@
+	sed -i.bak 's|^|$(dir $<)|' $@ && rm -f $@.bak
+
+
