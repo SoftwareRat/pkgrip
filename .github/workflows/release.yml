@@ -38,7 +38,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Install dependencies (Linux)
-        if: runner.os == 'Linux' && !matrix.freebsd
+        if: runner.os == 'Linux' && matrix.freebsd != true
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc python3 python3-pip ninja-build zlib1g-dev
@@ -52,7 +52,7 @@ jobs:
           pip3 install meson
 
       - name: Set up FreeBSD
-        if: matrix.freebsd
+        if: matrix.freebsd == true
         uses: vmactions/freebsd-vm@v1
         with:
           usesh: true
@@ -65,13 +65,13 @@ jobs:
         run: echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
 
       - name: Build (non-FreeBSD)
-        if: !matrix.freebsd
+        if: matrix.freebsd != true
         run: |
           meson setup builddir
           meson compile -C builddir
 
       - name: Build (FreeBSD)
-        if: matrix.freebsd
+        if: matrix.freebsd == true
         uses: vmactions/freebsd-vm@v1
         with:
           usesh: true
