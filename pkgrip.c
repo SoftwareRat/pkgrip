@@ -7,7 +7,7 @@
 #include "libkirk/amctrl.h"
 #include "libkirk/kirk_engine.h"
 
-#define PKGRIP_VERSION "1.2"
+#define PKGRIP_VERSION "1.2.1"
 
 /* NOTE: only supports files under 4GB */
 
@@ -40,18 +40,16 @@ void usage(const char *fmt, ...)
 	vsnprintf(msg, sizeof(msg), fmt, args);
 	va_end(args);
 
-	printf("\n╔══════════════════════════════════════════════════════════════╗\n");
-	printf("║ %-60s ║\n", msg);
-	printf("╠══════════════════════════════════════════════════════════════╣\n");
-	printf("║                           Usage                              ║\n");
-	printf("║ %-60s ║\n", exec);
-	printf("║                                                              ║\n");
-	printf("║                          Options                             ║\n");
-	printf("║  -psp    Extract PSP files only                              ║\n");
-	printf("║  -ps3    Extract PS3 files only                              ║\n");
-	printf("║                                                              ║\n");
-	printf("║  Both options are enabled by default.                        ║\n");
-	printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+	if (strlen(msg) > 0) {
+		printf(" %s\n\n", msg);
+	}
+
+	printf(" Usage: %s [options] <PKG file>\n\n", exec);
+	printf(" Options:\n");
+	printf("   -psp    Extract PSP files only\n");
+	printf("   -ps3    Extract PS3 files only\n");
+	printf("\n Both options are enabled by default.\n");
+	printf("════════════════════════════════════════════════════════════════\n\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -446,10 +444,9 @@ void free_mallocs()
 
 int main(int argc, char **argv)
 {
-	printf("===========================\n");
-	printf("==     pkgrip v%s     ==\n", PKGRIP_VERSION);
-	printf("== by qwikrazor87 & SoftwareRat ==\n");
-	printf("===========================\n\n");
+	printf("\n════════════════════════════════════════════════════════════════\n");
+	printf(" pkgrip v%s - by qwikrazor87 & SoftwareRat\n", PKGRIP_VERSION);
+	printf("════════════════════════════════════════════════════════════════\n\n");
 	exec = argv[0];
 
 	if (argc < 2)
@@ -482,4 +479,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
